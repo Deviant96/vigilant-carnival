@@ -1,0 +1,223 @@
+// datasource and generator - adjust to your setup
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum PaymentMethod {
+  CASH
+  DEBIT_CARD
+  CREDIT_CARD
+  E_WALLET
+  BANK_TRANSFER
+  AUTO_DEBIT
+  OTHER
+}
+
+enum RecurrenceInterval {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum RecurrenceEndType {
+  NEVER
+  BY_DATE
+  BY_COUNT
+}
+
+enum BudgetPeriod {
+  MONTHLY
+  WEEKLY
+  YEARLY
+}
+
+model User {
+  id               String              @id @default(cuid())
+  email            String              @unique
+  name             String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  transactions     Transaction[]
+  categories       Category[]
+  recurring        RecurringExpense[]
+  budgets          Budget[]
+  goals            Goal[]
+  autoRules        AutoCategoryRule[]
+  insightSnapshots InsightSnapshot[]
+}
+
+model Account {
+  id                 String   @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  access_token       String?  @map("access_token")
+  token_type         String?  @map("token_type")
+  refresh_token      String?  @map("refresh_token")
+  expires_at         Int?     @map("expires_at")
+  scope              String?
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+/// You can replace these with the official NextAuth schema if you prefer.
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Categories are user scoped (each user can have their own system).
+model Category {
+  id          String         @id @default(cuid())
+  userId      String
+  name        String
+  slug        String
+  color       String?        // hex for UI
+  icon        String?        // optional icon name
+  isFixed     Boolean        @default(false) // for things like rent, subscriptions
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+  recurringExpenses RecurringExpense[]
+  autoCategoryRules AutoCategoryRule[]
+  goals        Goal[]
+}
+
+model Transaction {
+  id             String       @id @default(cuid())
+  userId         String
+  categoryId     String?
+  amount         Decimal
+  currency       String       @default("IDR")
+  description    String?
+  tags           String[]     // simple text tags
+  date           DateTime
+  paymentMethod  PaymentMethod
+  isRecurring    Boolean      @default(false)
+  recurringId    String?
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  isAnomaly      Boolean      @default(false)
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category       Category?    @relation(fields: [categoryId], references: [id])
+  recurring      RecurringExpense? @relation(fields: [recurringId], references: [id])
+}
+
+model RecurringExpense {
+  id               String              @id @default(cuid())
+  userId           String
+  categoryId       String?
+  amount           Decimal
+  currency         String              @default("IDR")
+  description      String?
+  tags             String[]
+  paymentMethod    PaymentMethod
+  startDate        DateTime
+  interval         RecurrenceInterval
+  intervalEvery    Int                 @default(1) // every N months etc
+  endType          RecurrenceEndType   @default(NEVER)
+  endDate          DateTime?
+  remainingCount   Int?                // used when endType = BY_COUNT
+  isActive         Boolean             @default(true)
+  lastGeneratedAt  DateTime?
+
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category         Category?           @relation(fields: [categoryId], references: [id])
+  generatedTransactions Transaction[]
+}
+
+/// Auto categorization rules based on description keywords, tags, payment method etc.
+model AutoCategoryRule {
+  id             String        @id @default(cuid())
+  userId         String
+  categoryId     String
+  keyword        String        // lowercased keyword to look for
+  matchField     String        // "description" | "tags" | "paymentMethod" for now
+  priority       Int           @default(10) // lower is higher priority
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  isActive       Boolean       @default(true)
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category       Category      @relation(fields: [categoryId], references: [id])
+}
+
+/// Simple budgets per user and category.
+/// You can extend later per account or per tag.
+model Budget {
+  id              String        @id @default(cuid())
+  userId          String
+  categoryId      String?
+  name            String
+  period          BudgetPeriod
+  amount          Decimal
+  currency        String        @default("IDR")
+  startDate       DateTime
+  // for rolling monthly budgets, startDate is first month.
+  isActive        Boolean       @default(true)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category        Category?     @relation(fields: [categoryId], references: [id])
+}
+
+/// Goals like "save X by Y date" or "reduce Food spending by 20%".
+model Goal {
+  id              String        @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  targetAmount    Decimal
+  currentAmount   Decimal       @default(0)
+  currency        String        @default("IDR")
+  targetDate      DateTime
+  categoryId      String?       // optional category focus
+  isCompleted     Boolean       @default(false)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category        Category?     @relation(fields: [categoryId], references: [id])
+}
+
+/// Snapshot of daily or monthly analytics and advice.
+/// Used by nightly cron so dashboard can be fast.
+model InsightSnapshot {
+  id            String    @id @default(cuid())
+  userId        String
+  periodStart   DateTime  // inclusive
+  periodEnd     DateTime  // inclusive
+  granularity   String    // "DAY" or "MONTH"
+  data          Json      // precomputed metrics for Analyze layer
+  advice        Json      // text and structured hints for Advise layer
+
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, periodStart, periodEnd])
+}
