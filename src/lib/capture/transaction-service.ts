@@ -4,7 +4,9 @@
 import { prisma } from '@/lib/prisma'
 import type { Transaction, Prisma } from '@prisma/client'
 
-export async function createTransaction(data: Prisma.TransactionCreateInput): Promise<Transaction> {
+export async function createTransaction(
+  data: Prisma.TransactionUncheckedCreateInput
+): Promise<Transaction> {
   return await prisma.transaction.create({
     data,
   })
@@ -12,7 +14,7 @@ export async function createTransaction(data: Prisma.TransactionCreateInput): Pr
 
 export async function updateTransaction(
   id: string,
-  data: Prisma.TransactionUpdateInput
+  data: Prisma.TransactionUncheckedUpdateInput
 ): Promise<Transaction> {
   return await prisma.transaction.update({
     where: { id },

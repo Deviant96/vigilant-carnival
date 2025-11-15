@@ -30,7 +30,7 @@ export async function forecastWeightedAverage(
   let weightedSum = 0
   let weightSum = 0
   
-  Array.from(dailyTotals.entries()).forEach(([_, amount], index) => {
+  Array.from(dailyTotals.entries()).forEach(([, amount], index) => {
     const weight = index + 1 // Linear weight increase
     weightedSum += amount * weight
     weightSum += weight

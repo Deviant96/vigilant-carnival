@@ -1,7 +1,6 @@
 // Insights Layer - Generator
 // Generates textual insights and advice
 
-import type { Transaction } from '@prisma/client'
 import { calculateBurnRate } from '@/lib/analyze/burn-rate'
 import { getCategoryBreakdown } from '@/lib/analyze/aggregations'
 import dayjs from 'dayjs'

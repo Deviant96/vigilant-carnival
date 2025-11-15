@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
   try {
     const insights = await generateInsights(userId)
     return NextResponse.json({ insights })
-  } catch (error) {
+  } catch (err) {
+    console.error('Failed to generate insights', err)
     return NextResponse.json({ error: 'Failed to generate insights' }, { status: 500 })
   }
 }

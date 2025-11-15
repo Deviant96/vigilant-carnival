@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
       categoryBreakdown,
       burnRate,
     })
-  } catch (error) {
+  } catch (err) {
+    console.error('Failed to fetch analytics', err)
     return NextResponse.json({ error: 'Failed to fetch analytics' }, { status: 500 })
   }
 }

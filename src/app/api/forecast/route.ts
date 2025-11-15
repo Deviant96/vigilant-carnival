@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
       : await forecastMovingAverage(userId, 30, 30)
 
     return NextResponse.json(forecast)
-  } catch (error) {
+  } catch (err) {
+    console.error('Failed to generate forecast', err)
     return NextResponse.json({ error: 'Failed to generate forecast' }, { status: 500 })
   }
 }
