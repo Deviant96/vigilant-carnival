@@ -12,6 +12,8 @@ interface ForecastChartProps {
   projections: ForecastSeries[]
 }
 
+type MergedPoint = { date: string; actual?: number } & Record<string, number | string | undefined>
+
 export function ForecastChart({ historical, projections }: ForecastChartProps) {
   const mergedData = mergeSeries(historical, projections)
 
@@ -58,8 +60,8 @@ export function ForecastChart({ historical, projections }: ForecastChartProps) {
 function mergeSeries(
   historical: { date: string; amount: number }[],
   projections: ForecastSeries[]
-) {
-  const map = new Map<string, { date: string; actual?: number } & Record<string, number | undefined>>()
+) : MergedPoint[] {
+  const map = new Map<string, MergedPoint>()
   historical.forEach(point => {
     map.set(point.date, { date: point.date, actual: Number(point.amount.toFixed(2)) })
   })

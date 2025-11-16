@@ -1,9 +1,10 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface BudgetFormProps {
-  onSubmit?: (data: FormData) => Promise<void> | void
+  userId: string
 }
 
 interface FormData {
@@ -13,7 +14,8 @@ interface FormData {
   categoryId: string
 }
 
-export function BudgetForm({ onSubmit }: BudgetFormProps) {
+export function BudgetForm({ userId }: BudgetFormProps) {
+  const router = useRouter()
   const [formState, setFormState] = useState<FormData>({
     name: '',
     amount: '',
@@ -28,9 +30,26 @@ export function BudgetForm({ onSubmit }: BudgetFormProps) {
     setIsSubmitting(true)
     setMessage(null)
     try {
-      await onSubmit?.(formState)
-      setMessage('Draft budget captured. Hook up /api/budgets for persistence.')
+      const response = await fetch('/api/budgets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formState,
+          userId,
+          amount: Number(formState.amount),
+          startDate: new Date().toISOString(),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create budget')
+      }
+
+      setMessage('Budget saved and ready for tracking.')
       setFormState({ name: '', amount: '', period: 'MONTHLY', categoryId: '' })
+      router.refresh()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to save budget')
     } finally {
       setIsSubmitting(false)
     }

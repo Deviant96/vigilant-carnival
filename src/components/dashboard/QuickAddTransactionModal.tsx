@@ -16,6 +16,7 @@ const paymentMethods = [
 ] as const
 
 type TransactionInput = z.infer<typeof transactionSchema>
+type PaymentMethod = (typeof paymentMethods)[number]
 
 interface QuickAddTransactionModalProps {
   userId: string
@@ -31,7 +32,7 @@ export function QuickAddTransactionModal({ userId, onSuccess }: QuickAddTransact
     description: '',
     date: dayjs().format('YYYY-MM-DD'),
     categoryId: '',
-    paymentMethod: paymentMethods[0],
+    paymentMethod: paymentMethods[0] as PaymentMethod,
     tags: '',
   })
 
@@ -158,7 +159,9 @@ export function QuickAddTransactionModal({ userId, onSuccess }: QuickAddTransact
                 Payment Method
                 <select
                   value={formState.paymentMethod}
-                  onChange={event => setFormState(prev => ({ ...prev, paymentMethod: event.target.value }))}
+                  onChange={event =>
+                    setFormState(prev => ({ ...prev, paymentMethod: event.target.value as PaymentMethod }))
+                  }
                   className="mt-1 w-full rounded-lg border px-3 py-2"
                 >
                   {paymentMethods.map(method => (

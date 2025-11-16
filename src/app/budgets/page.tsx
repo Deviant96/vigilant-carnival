@@ -38,7 +38,7 @@ export default async function BudgetsPage() {
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <BudgetList budgets={budgets} />
-        <BudgetForm />
+        <BudgetForm userId={DEMO_USER_ID} />
       </div>
     </section>
   )

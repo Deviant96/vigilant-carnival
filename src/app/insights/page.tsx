@@ -7,6 +7,8 @@ import { InsightGrid } from '@/components/insights/InsightGrid'
 
 const DEMO_USER_ID = process.env.DEMO_USER_ID ?? 'demo-user'
 
+type InsightCard = { title: string; body: string; tone?: 'positive' | 'warning' | 'neutral' }
+
 export default async function InsightsPage() {
   const now = dayjs()
   const [insights, weekendPattern, anomalies, breakdown] = await Promise.all([
@@ -16,7 +18,7 @@ export default async function InsightsPage() {
     getCategoryBreakdown(DEMO_USER_ID, now.year(), now.month() + 1),
   ])
 
-  const cards = insights.map(text => ({
+  const cards: InsightCard[] = insights.map(text => ({
     title: deriveTitle(text),
     body: text,
     tone: text.toLowerCase().includes('warning') ? 'warning' : 'neutral',
