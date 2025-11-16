@@ -1,0 +1,6 @@
+date,amount,description,category,paymentMethod,tags
+2025-11-15,50000,Grocery shopping,Food & Dining,DEBIT_CARD,"groceries,weekly"
+2025-11-14,15000,Coffee at Starbucks,Food & Dining,E_WALLET,coffee
+2025-11-13,250000,Monthly rent,Housing,BANK_TRANSFER,rent
+2025-11-12,75000,Gas station,Transportation,CASH,"fuel,car"
+2025-11-11,30000,Restaurant dinner,Food & Dining,CREDIT_CARD,"dining,weekend"

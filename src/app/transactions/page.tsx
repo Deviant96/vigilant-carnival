@@ -39,7 +39,7 @@ export default async function TransactionsPage() {
       <div>
         <p className="text-xs uppercase tracking-wide text-slate-500">Capture</p>
         <h1 className="text-3xl font-semibold">Transactions</h1>
-        <p className="text-sm text-slate-500">Inline edit, filters, CSV import/export coming soon.</p>
+        <p className="text-sm text-slate-500">Manage your transactions with filters and CSV import/export.</p>
       </div>
       <TransactionsClient rows={rows} initialFilters={initialFilters} />
     </section>
