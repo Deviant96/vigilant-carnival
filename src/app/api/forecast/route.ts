@@ -2,20 +2,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { forecastMovingAverage } from '@/lib/forecast/moving-average'
 import { forecastWeightedAverage } from '@/lib/forecast/weighted-average'
+import { getCurrentUser } from '@/lib/auth/get-current-user'
 
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams
-  const userId = searchParams.get('userId')
-  const method = searchParams.get('method') || 'simple'
-
-  if (!userId) {
-    return NextResponse.json({ error: 'userId required' }, { status: 400 })
+  const user = await getCurrentUser()
+  if (!user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const searchParams = request.nextUrl.searchParams
+  const method = searchParams.get('method') || 'simple'
 
   try {
     const forecast = method === 'weighted'
-      ? await forecastWeightedAverage(userId, 30, 30)
-      : await forecastMovingAverage(userId, 30, 30)
+      ? await forecastWeightedAverage(user.id, 30, 30)
+      : await forecastMovingAverage(user.id, 30, 30)
 
     return NextResponse.json(forecast)
   } catch (err) {

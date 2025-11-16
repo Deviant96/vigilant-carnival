@@ -4,18 +4,23 @@ import { detectWeekendPattern } from '@/lib/analyze/patterns'
 import { detectAnomalies } from '@/lib/analyze/anomalies'
 import { getCategoryBreakdown } from '@/lib/analyze/aggregations'
 import { InsightGrid } from '@/components/insights/InsightGrid'
-
-const DEMO_USER_ID = process.env.DEMO_USER_ID ?? 'demo-user'
+import { getCurrentUser } from '@/lib/auth/get-current-user'
+import { redirect } from 'next/navigation'
 
 type InsightCard = { title: string; body: string; tone?: 'positive' | 'warning' | 'neutral' }
 
 export default async function InsightsPage() {
+  const user = await getCurrentUser()
+  if (!user?.id) {
+    redirect('/auth/login')
+  }
+
   const now = dayjs()
   const [insights, weekendPattern, anomalies, breakdown] = await Promise.all([
-    generateInsights(DEMO_USER_ID),
-    detectWeekendPattern(DEMO_USER_ID),
-    detectAnomalies(DEMO_USER_ID),
-    getCategoryBreakdown(DEMO_USER_ID, now.year(), now.month() + 1),
+    generateInsights(user.id),
+    detectWeekendPattern(user.id),
+    detectAnomalies(user.id),
+    getCategoryBreakdown(user.id, now.year(), now.month() + 1),
   ])
 
   const cards: InsightCard[] = insights.map(text => ({

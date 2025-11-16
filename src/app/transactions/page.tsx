@@ -2,12 +2,17 @@ import dayjs from 'dayjs'
 import { getTransactions } from '@/lib/capture/transaction-service'
 import type { TransactionFilterState, TransactionRow } from '@/components/transactions/types'
 import { TransactionsClient } from './TransactionsClient'
-
-const DEMO_USER_ID = process.env.DEMO_USER_ID ?? 'demo-user'
+import { getCurrentUser } from '@/lib/auth/get-current-user'
+import { redirect } from 'next/navigation'
 
 export default async function TransactionsPage() {
+  const user = await getCurrentUser()
+  if (!user?.id) {
+    redirect('/auth/login')
+  }
+
   const startDate = dayjs().subtract(30, 'day')
-  const rawTransactions = await getTransactions(DEMO_USER_ID, { startDate: startDate.toDate() })
+  const rawTransactions = await getTransactions(user.id, { startDate: startDate.toDate() })
 
   const rows: TransactionRow[] = rawTransactions.map(transaction => ({
     id: transaction.id,

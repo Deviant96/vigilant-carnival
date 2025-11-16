@@ -7,18 +7,23 @@ import { prisma } from '@/lib/prisma'
 import { ForecastChart } from '@/components/forecast/ForecastChart'
 import { RecurringList } from '@/components/forecast/RecurringList'
 import type { RecurringExpense } from '@prisma/client'
-
-const DEMO_USER_ID = process.env.DEMO_USER_ID ?? 'demo-user'
+import { getCurrentUser } from '@/lib/auth/get-current-user'
+import { redirect } from 'next/navigation'
 
 export default async function ForecastPage() {
+  const user = await getCurrentUser()
+  if (!user?.id) {
+    redirect('/auth/login')
+  }
+
   const now = dayjs()
   const [simpleForecast, weightedForecast, transactions, monthlyTotals, recurringExpenses] = await Promise.all([
-    forecastMovingAverage(DEMO_USER_ID, 45, 30),
-    forecastWeightedAverage(DEMO_USER_ID, 45, 30),
-    getTransactions(DEMO_USER_ID, { startDate: now.subtract(45, 'day').toDate() }),
-    getMonthlyTotals(DEMO_USER_ID, now.year(), now.month() + 1),
+    forecastMovingAverage(user.id, 45, 30),
+    forecastWeightedAverage(user.id, 45, 30),
+    getTransactions(user.id, { startDate: now.subtract(45, 'day').toDate() }),
+    getMonthlyTotals(user.id, now.year(), now.month() + 1),
     prisma.recurringExpense.findMany({
-      where: { userId: DEMO_USER_ID, isActive: true },
+      where: { userId: user.id, isActive: true },
       include: { category: true },
     }),
   ])

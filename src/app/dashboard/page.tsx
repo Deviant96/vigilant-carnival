@@ -8,17 +8,22 @@ import { MonthBurnBar } from '@/components/dashboard/MonthBurnBar'
 import { ForecastGauge } from '@/components/dashboard/ForecastGauge'
 import { QuickAddTransactionModal } from '@/components/dashboard/QuickAddTransactionModal'
 import TransactionList from '@/components/TransactionList'
-
-const DEMO_USER_ID = process.env.DEMO_USER_ID ?? 'demo-user'
+import { getCurrentUser } from '@/lib/auth/get-current-user'
+import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
+  const user = await getCurrentUser()
+  if (!user?.id) {
+    redirect('/auth/login')
+  }
+
   const now = dayjs()
   const [burnMetrics, monthlyTotals, categoryBreakdown, forecast, transactions] = await Promise.all([
-    calculateBurnRate(DEMO_USER_ID, 30),
-    getMonthlyTotals(DEMO_USER_ID, now.year(), now.month() + 1),
-    getCategoryBreakdown(DEMO_USER_ID, now.year(), now.month() + 1),
-    forecastMovingAverage(DEMO_USER_ID, 30, 30),
-    getTransactions(DEMO_USER_ID, {
+    calculateBurnRate(user.id, 30),
+    getMonthlyTotals(user.id, now.year(), now.month() + 1),
+    getCategoryBreakdown(user.id, now.year(), now.month() + 1),
+    forecastMovingAverage(user.id, 30, 30),
+    getTransactions(user.id, {
       startDate: now.subtract(45, 'day').toDate(),
     }),
   ])
@@ -46,7 +51,7 @@ export default async function DashboardPage() {
             Today&apos;s spend vs. typical day, burn rate, and forecasted month end.
           </p>
         </div>
-        <QuickAddTransactionModal userId={DEMO_USER_ID} />
+        <QuickAddTransactionModal userId={user.id} />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

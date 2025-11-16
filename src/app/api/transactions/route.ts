@@ -4,20 +4,21 @@ import { Prisma } from '@prisma/client'
 import { getTransactions, createTransaction } from '@/lib/capture/transaction-service'
 import { autoCategorizeTran } from '@/lib/capture/auto-category'
 import { transactionSchema } from '@/schemas'
+import { getCurrentUser } from '@/lib/auth/get-current-user'
 
 export async function GET(request: NextRequest) {
+  const user = await getCurrentUser()
+  if (!user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const searchParams = request.nextUrl.searchParams
-  const userId = searchParams.get('userId')
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
   const categoryId = searchParams.get('categoryId')
 
-  if (!userId) {
-    return NextResponse.json({ error: 'userId required' }, { status: 400 })
-  }
-
   try {
-    const transactions = await getTransactions(userId, {
+    const transactions = await getTransactions(user.id, {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
       categoryId: categoryId ?? undefined,
@@ -30,10 +31,16 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const user = await getCurrentUser()
+  if (!user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const payload = await request.json()
     const parsed = transactionSchema.parse({
       ...payload,
+      userId: user.id,
       amount: Number(payload.amount),
       date: payload.date ? new Date(payload.date) : new Date(),
       tags: Array.isArray(payload.tags)
@@ -45,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     const resolvedCategoryId =
       parsed.categoryId ||
-      (await autoCategorizeTran(parsed.userId, parsed.description || '', parsed.tags, parsed.paymentMethod)) ||
+      (await autoCategorizeTran(user.id, parsed.description || '', parsed.tags, parsed.paymentMethod)) ||
       undefined
 
     const transaction = await createTransaction({
