@@ -1,15 +1,19 @@
 // Capture Layer - CSV Export
 // Server-side CSV generation
 
-import type { Transaction } from '@prisma/client'
+import type { Transaction, Category } from '@prisma/client'
 
-export function generateCSV(transactions: Transaction[]): string {
-  const headers = ['Date', 'Amount', 'Description', 'Category', 'Payment Method', 'Tags']
+type TransactionWithCategory = Transaction & {
+  category?: Category | null
+}
+
+export function generateCSV(transactions: TransactionWithCategory[]): string {
+  const headers = ['date', 'amount', 'description', 'category', 'paymentMethod', 'tags']
   const rows = transactions.map(t => [
     t.date.toISOString().split('T')[0],
     t.amount.toString(),
-    t.description || '',
-    t.categoryId || '',
+    (t.description || '').replace(/"/g, '""'), // Escape quotes
+    t.category?.name || '',
     t.paymentMethod,
     t.tags.join(', '),
   ])
