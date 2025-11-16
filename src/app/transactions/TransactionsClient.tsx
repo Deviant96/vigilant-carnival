@@ -16,10 +16,10 @@ export function TransactionsClient({ rows, initialFilters }: TransactionsClientP
 
   const filteredRows = useMemo(() => {
     return rows.filter(row => {
-      if (filters.startDate && dayjs(row.date).isBefore(dayjs(filters.startDate))) {
+      if (filters.startDate && dayjs(row.date).isBefore(dayjs(filters.startDate), 'day')) {
         return false
       }
-      if (filters.endDate && dayjs(row.date).isAfter(dayjs(filters.endDate))) {
+      if (filters.endDate && dayjs(row.date).isAfter(dayjs(filters.endDate), 'day')) {
         return false
       }
       if (filters.category && !row.categoryName?.toLowerCase().includes(filters.category.toLowerCase())) {

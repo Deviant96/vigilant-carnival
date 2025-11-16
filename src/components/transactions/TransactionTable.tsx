@@ -1,7 +1,7 @@
 'use client'
 
 import dayjs from 'dayjs'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { TransactionInlineEditor } from './TransactionInlineEditor'
 import { TransactionRow } from './types'
 
@@ -12,6 +12,10 @@ interface TransactionTableProps {
 export function TransactionTable({ transactions }: TransactionTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [rows, setRows] = useState(transactions)
+
+  useEffect(() => {
+    setRows(transactions)
+  }, [transactions])
 
   const highlights = useMemo(() => {
     const messages: string[] = []
