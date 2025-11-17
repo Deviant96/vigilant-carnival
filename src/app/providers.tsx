@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SessionProvider } from 'next-auth/react'
 import { ReactNode, useState } from 'react'
+import { ToastProvider, ToastViewport } from '@/components/ui/ToastProvider'
 
 interface AppProvidersProps {
   children: ReactNode
@@ -13,7 +14,12 @@ export function AppProviders({ children }: AppProvidersProps) {
 
   return (
     <SessionProvider>
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      <QueryClientProvider client={client}>
+        <ToastProvider>
+          {children}
+          <ToastViewport />
+        </ToastProvider>
+      </QueryClientProvider>
     </SessionProvider>
   )
 }

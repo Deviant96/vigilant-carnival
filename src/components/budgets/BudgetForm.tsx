@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/ui/ToastProvider'
 
 interface BudgetFormProps {
   userId: string
@@ -16,6 +17,7 @@ interface FormData {
 
 export function BudgetForm({ userId }: BudgetFormProps) {
   const router = useRouter()
+  const { showToast } = useToast()
   const [formState, setFormState] = useState<FormData>({
     name: '',
     amount: '',
@@ -48,8 +50,10 @@ export function BudgetForm({ userId }: BudgetFormProps) {
       setMessage('Budget saved and ready for tracking.')
       setFormState({ name: '', amount: '', period: 'MONTHLY', categoryId: '' })
       router.refresh()
+      showToast('Budget saved and tracking')
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Unable to save budget')
+      showToast('Unable to save budget', 'error')
     } finally {
       setIsSubmitting(false)
     }

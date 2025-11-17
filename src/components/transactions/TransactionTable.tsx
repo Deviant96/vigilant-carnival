@@ -7,9 +7,10 @@ import { TransactionRow } from './types'
 
 interface TransactionTableProps {
   transactions: TransactionRow[]
+  userId: string
 }
 
-export function TransactionTable({ transactions }: TransactionTableProps) {
+export function TransactionTable({ transactions, userId }: TransactionTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [rows, setRows] = useState(transactions)
 
@@ -64,15 +65,24 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rows.map(row => (
-              <tr key={row.id} className={row.isAnomaly ? 'bg-rose-50/50' : undefined}>
+      {rows.map(row => (
+        <tr key={row.id} className={row.isAnomaly ? 'bg-rose-50/50' : undefined}>
                 <td className="px-4 py-3 align-top text-xs text-slate-500">
                   {dayjs(row.date).format('MMM D')}
                 </td>
                 <td className="px-4 py-3">
                   <div className="font-medium text-slate-900">{row.description}</div>
                   {row.tags.length > 0 && (
-                    <p className="text-xs text-slate-500">{row.tags.join(', ')}</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {row.tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </td>
                 <td className="px-4 py-3 text-slate-600">{row.categoryName ?? 'Uncategorized'}</td>
@@ -92,11 +102,12 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
         </table>
       </div>
       {editingId && (
-        <TransactionInlineEditor
-          transaction={rows.find(row => row.id === editingId)!}
-          onCancel={() => setEditingId(null)}
-          onSave={handleSave}
-        />
+          <TransactionInlineEditor
+            transaction={rows.find(row => row.id === editingId)!}
+          userId={userId}
+            onCancel={() => setEditingId(null)}
+            onSave={handleSave}
+          />
       )}
     </div>
   )

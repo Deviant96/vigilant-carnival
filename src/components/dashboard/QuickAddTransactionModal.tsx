@@ -4,6 +4,11 @@ import { FormEvent, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import { transactionSchema } from '@/schemas'
 import type { z } from 'zod'
+import { useCategories } from '@/hooks/useCategories'
+import { useTags } from '@/hooks/useTags'
+import { TagInput } from '@/components/ui/TagInput'
+import { useToast } from '@/components/ui/ToastProvider'
+import { useRouter } from 'next/navigation'
 
 const paymentMethods = [
   'CASH',
@@ -33,8 +38,12 @@ export function QuickAddTransactionModal({ userId, onSuccess }: QuickAddTransact
     date: dayjs().format('YYYY-MM-DD'),
     categoryId: '',
     paymentMethod: paymentMethods[0] as PaymentMethod,
-    tags: '',
+    tags: [] as string[],
   })
+  const { data: categories } = useCategories(userId)
+  const { data: tagOptions } = useTags(userId)
+  const { showToast } = useToast()
+  const router = useRouter()
 
   const parsedAmount = useMemo(() => Number(formState.amount || 0), [formState.amount])
 
@@ -54,9 +63,7 @@ export function QuickAddTransactionModal({ userId, onSuccess }: QuickAddTransact
         amount: parsedAmount,
         categoryId: formState.categoryId || undefined,
         description: formState.description,
-        tags: formState.tags
-          ? formState.tags.split(',').map(tag => tag.trim()).filter(Boolean)
-          : [],
+        tags: formState.tags,
         date: new Date(formState.date),
         paymentMethod: formState.paymentMethod as TransactionInput['paymentMethod'],
         isRecurring: false,
@@ -78,11 +85,14 @@ export function QuickAddTransactionModal({ userId, onSuccess }: QuickAddTransact
         ...prev,
         amount: '',
         description: '',
-        tags: '',
+        tags: [],
       }))
       setIsOpen(false)
+      router.refresh()
+      showToast('Transaction captured')
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : 'Something went wrong')
+      showToast('Failed to save transaction', 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -146,14 +156,19 @@ export function QuickAddTransactionModal({ userId, onSuccess }: QuickAddTransact
                 />
               </label>
               <label className="text-sm font-medium text-slate-600">
-                Category Id (optional)
-                <input
-                  type="text"
+                Category (optional)
+                <select
                   value={formState.categoryId}
                   onChange={event => setFormState(prev => ({ ...prev, categoryId: event.target.value }))}
                   className="mt-1 w-full rounded-lg border px-3 py-2"
-                  placeholder="Existing category id"
-                />
+                >
+                  <option value="">Uncategorized</option>
+                  {categories?.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="text-sm font-medium text-slate-600">
                 Payment Method
@@ -172,12 +187,11 @@ export function QuickAddTransactionModal({ userId, onSuccess }: QuickAddTransact
                 </select>
               </label>
               <label className="text-sm font-medium text-slate-600">
-                Tags (comma separated)
-                <input
-                  type="text"
+                Tags
+                <TagInput
                   value={formState.tags}
-                  onChange={event => setFormState(prev => ({ ...prev, tags: event.target.value }))}
-                  className="mt-1 w-full rounded-lg border px-3 py-2"
+                  onChange={next => setFormState(prev => ({ ...prev, tags: next }))}
+                  suggestions={tagOptions}
                   placeholder="coffee, commute, routine"
                 />
               </label>

@@ -10,9 +10,10 @@ import type { TransactionFilterState, TransactionRow } from '@/components/transa
 interface TransactionsClientProps {
   rows: TransactionRow[]
   initialFilters: TransactionFilterState
+  userId: string
 }
 
-export function TransactionsClient({ rows, initialFilters }: TransactionsClientProps) {
+export function TransactionsClient({ rows, initialFilters, userId }: TransactionsClientProps) {
   const [filters, setFilters] = useState(initialFilters)
 
   const filteredRows = useMemo(() => {
@@ -52,7 +53,7 @@ export function TransactionsClient({ rows, initialFilters }: TransactionsClientP
           <CSVActions startDate={filters.startDate} endDate={filters.endDate} />
         </div>
       </div>
-      <TransactionTable transactions={filteredRows} />
+      <TransactionTable transactions={filteredRows} userId={userId} />
     </div>
   )
 }
