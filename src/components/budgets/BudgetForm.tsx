@@ -2,6 +2,9 @@
 
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/ui/ToastProvider'
+import { useCategories } from '@/hooks/useCategories'
+import { CategorySelector } from '@/components/ui/CategorySelector'
 
 interface BudgetFormProps {
   userId: string
@@ -16,6 +19,7 @@ interface FormData {
 
 export function BudgetForm({ userId }: BudgetFormProps) {
   const router = useRouter()
+  const { showToast } = useToast()
   const [formState, setFormState] = useState<FormData>({
     name: '',
     amount: '',
@@ -24,6 +28,7 @@ export function BudgetForm({ userId }: BudgetFormProps) {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const { data: categories } = useCategories(userId)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -37,6 +42,7 @@ export function BudgetForm({ userId }: BudgetFormProps) {
           ...formState,
           userId,
           amount: Number(formState.amount),
+          categoryId: formState.categoryId || undefined,
           startDate: new Date().toISOString(),
         }),
       })
@@ -48,8 +54,10 @@ export function BudgetForm({ userId }: BudgetFormProps) {
       setMessage('Budget saved and ready for tracking.')
       setFormState({ name: '', amount: '', period: 'MONTHLY', categoryId: '' })
       router.refresh()
+      showToast('Budget saved and tracking')
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Unable to save budget')
+      showToast('Unable to save budget', 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -93,13 +101,15 @@ export function BudgetForm({ userId }: BudgetFormProps) {
           </select>
         </label>
         <label className="text-sm text-slate-600">
-          Category Id
-          <input
-            className="mt-1 w-full rounded-lg border px-3 py-2"
-            value={formState.categoryId}
-            onChange={event => setFormState(prev => ({ ...prev, categoryId: event.target.value }))}
-            placeholder="Optional category focus"
-          />
+          Category
+          <div className="mt-1">
+            <CategorySelector
+              categories={categories}
+              value={formState.categoryId || undefined}
+              onChange={categoryId => setFormState(prev => ({ ...prev, categoryId: categoryId ?? '' }))}
+              placeholder="All categories"
+            />
+          </div>
         </label>
       </div>
       {message && <p className="mt-3 text-sm text-emerald-600">{message}</p>}

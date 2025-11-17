@@ -19,6 +19,7 @@ export default async function TransactionsPage() {
     amount: Number(transaction.amount),
     date: transaction.date.toISOString(),
     description: transaction.description ?? 'Untitled',
+    categoryId: transaction.categoryId ?? undefined,
     categoryName: transaction.category?.name,
     paymentMethod: transaction.paymentMethod,
     tags: transaction.tags,
@@ -41,7 +42,7 @@ export default async function TransactionsPage() {
         <h1 className="text-3xl font-semibold">Transactions</h1>
         <p className="text-sm text-slate-500">Manage your transactions with filters and CSV import/export.</p>
       </div>
-      <TransactionsClient rows={rows} initialFilters={initialFilters} />
+      <TransactionsClient rows={rows} initialFilters={initialFilters} userId={user.id} />
     </section>
   )
 }

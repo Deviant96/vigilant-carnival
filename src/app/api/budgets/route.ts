@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next'
 import { prisma } from '@/lib/prisma'
 import { budgetSchema } from '@/schemas'
 import { authOptions } from '@/lib/auth/auth-options'
+import { calculateBudgetSpend } from '@/lib/analyze/budget-tracking'
 
 const BAD_REQUEST = { status: 400 as const }
 type SessionWithUser = { user?: { id?: string } }
@@ -24,11 +25,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const budgets = await prisma.budget.findMany({
+    const budgetsRaw = await prisma.budget.findMany({
       where: { userId },
       include: { category: true },
       orderBy: { createdAt: 'desc' },
     })
+    const budgets = await Promise.all(
+      budgetsRaw.map(async budget => ({
+        ...budget,
+        spent: await calculateBudgetSpend(budget),
+      }))
+    )
     return NextResponse.json(budgets)
   } catch (error) {
     console.error('Failed to fetch budgets', error)
@@ -49,6 +56,7 @@ export async function POST(request: NextRequest) {
       userId,
       amount: Number(raw.amount),
       startDate: raw.startDate ? new Date(raw.startDate) : new Date(),
+      categoryId: raw.categoryId || undefined,
     })
 
     const created = await prisma.budget.create({

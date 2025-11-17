@@ -5,6 +5,8 @@ export interface TransactionRow {
   amount: number
   date: string
   description: string
+  // category identifier to support editing
+  categoryId?: string
   categoryName?: string
   paymentMethod: PaymentMethod
   tags: string[]

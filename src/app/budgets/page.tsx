@@ -1,10 +1,9 @@
-import dayjs from 'dayjs'
 import { prisma } from '@/lib/prisma'
-import { getCategoryBreakdown, getMonthlyTotals } from '@/lib/analyze/aggregations'
 import { BudgetList } from '@/components/budgets/BudgetList'
 import { BudgetForm } from '@/components/budgets/BudgetForm'
 import { getCurrentUser } from '@/lib/auth/get-current-user'
 import { redirect } from 'next/navigation'
+import { calculateBudgetSpend } from '@/lib/analyze/budget-tracking'
 
 export default async function BudgetsPage() {
   const user = await getCurrentUser()
@@ -12,25 +11,21 @@ export default async function BudgetsPage() {
     redirect('/auth/login')
   }
 
-  const now = dayjs()
-  const [budgetsRaw, breakdown, monthlyTotals] = await Promise.all([
-    prisma.budget.findMany({
-      where: { userId: user.id, isActive: true },
-      include: { category: true },
-      orderBy: { createdAt: 'desc' },
-    }),
-    getCategoryBreakdown(user.id, now.year(), now.month() + 1),
-    getMonthlyTotals(user.id, now.year(), now.month() + 1),
-  ])
+  const budgetsRaw = await prisma.budget.findMany({
+    where: { userId: user.id, isActive: true },
+    include: { category: true },
+    orderBy: { createdAt: 'desc' },
+  })
+  const spentByBudget = await Promise.all(
+    budgetsRaw.map(async budget => ({ id: budget.id, spent: await calculateBudgetSpend(budget) }))
+  )
 
   const budgets = budgetsRaw.map(budget => ({
     id: budget.id,
     name: budget.name,
     period: budget.period,
     amount: Number(budget.amount),
-    spent: budget.category?.name
-      ? breakdown[budget.category.name] ?? 0
-      : monthlyTotals.total,
+    spent: spentByBudget.find(entry => entry.id === budget.id)?.spent ?? 0,
     categoryName: budget.category?.name,
   }))
 
