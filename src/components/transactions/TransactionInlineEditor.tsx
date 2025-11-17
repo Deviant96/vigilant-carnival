@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/ToastProvider'
 import { useCategories } from '@/hooks/useCategories'
 import { useTags } from '@/hooks/useTags'
 import { TransactionRow } from './types'
+import { CategorySelector } from '@/components/ui/CategorySelector'
 
 interface TransactionInlineEditorProps {
   transaction: TransactionRow
@@ -101,24 +102,16 @@ export function TransactionInlineEditor({ transaction, onSave, onCancel, userId 
       <div className="grid gap-2 sm:grid-cols-2">
         <label className="text-xs uppercase tracking-wide text-slate-500">
           Category
-          <select
-            className="mt-1 w-full rounded-lg border px-3 py-2"
-            value={formState.categoryId ?? ''}
-            onChange={event =>
-              setFormState(prev => ({
-                ...prev,
-                categoryId: event.target.value || undefined,
-                categoryName: categories?.find(option => option.id === event.target.value)?.name,
-              }))
-            }
-          >
-            <option value="">Uncategorized</option>
-            {categories?.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+          <div className="mt-1">
+            <CategorySelector
+              categories={categories}
+              value={formState.categoryId}
+              onChange={(categoryId, categoryName) =>
+                setFormState(prev => ({ ...prev, categoryId, categoryName }))
+              }
+              placeholder="Uncategorized"
+            />
+          </div>
         </label>
         <label className="text-xs uppercase tracking-wide text-slate-500">
           Tags

@@ -9,6 +9,7 @@ import { useTags } from '@/hooks/useTags'
 import { TagInput } from '@/components/ui/TagInput'
 import { useToast } from '@/components/ui/ToastProvider'
 import { useRouter } from 'next/navigation'
+import { CategorySelector } from '@/components/ui/CategorySelector'
 
 const paymentMethods = [
   'CASH',
@@ -157,18 +158,16 @@ export function QuickAddTransactionModal({ userId, onSuccess }: QuickAddTransact
               </label>
               <label className="text-sm font-medium text-slate-600">
                 Category (optional)
-                <select
-                  value={formState.categoryId}
-                  onChange={event => setFormState(prev => ({ ...prev, categoryId: event.target.value }))}
-                  className="mt-1 w-full rounded-lg border px-3 py-2"
-                >
-                  <option value="">Uncategorized</option>
-                  {categories?.map(category => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="mt-1">
+                  <CategorySelector
+                    categories={categories}
+                    value={formState.categoryId || undefined}
+                    onChange={(categoryId: string | undefined) =>
+                      setFormState(prev => ({ ...prev, categoryId: categoryId ?? '' }))
+                    }
+                    placeholder="Uncategorized"
+                  />
+                </div>
               </label>
               <label className="text-sm font-medium text-slate-600">
                 Payment Method

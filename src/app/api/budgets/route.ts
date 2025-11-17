@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
       userId,
       amount: Number(raw.amount),
       startDate: raw.startDate ? new Date(raw.startDate) : new Date(),
+      categoryId: raw.categoryId || undefined,
     })
 
     const created = await prisma.budget.create({

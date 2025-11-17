@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 interface ToastMessage {
   id: string
@@ -42,26 +42,39 @@ export function ToastViewport() {
   const { toasts, dismissToast } = useToast()
 
   return (
-    <div className="fixed right-4 top-4 z-50 flex w-full max-w-sm flex-col gap-3">
+    <div className="fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-3">
       {toasts.map(toast => (
-        <div
-          key={toast.id}
-          className={`flex items-start gap-3 rounded-xl border px-4 py-3 shadow-lg ${
-            toast.variant === 'error'
-              ? 'border-rose-200 bg-rose-50 text-rose-800'
-              : 'border-emerald-100 bg-emerald-50 text-emerald-800'
-          }`}
-        >
-          <div className="flex-1 text-sm font-medium">{toast.title}</div>
-          <button
-            type="button"
-            className="text-xs font-semibold text-slate-500"
-            onClick={() => dismissToast(toast.id)}
-          >
-            Close
-          </button>
-        </div>
+        <AutoDismissToast key={toast.id} toast={toast} dismissToast={dismissToast} />
       ))}
+    </div>
+  )
+}
+
+function AutoDismissToast({
+  toast,
+  dismissToast,
+}: {
+  toast: ToastMessage
+  dismissToast: (id: string) => void
+}) {
+  const isError = toast.variant === 'error'
+
+  useEffect(() => {
+    if (isError) return
+    const timer = setTimeout(() => dismissToast(toast.id), 4500)
+    return () => clearTimeout(timer)
+  }, [dismissToast, isError, toast.id])
+
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-xl border px-4 py-3 shadow-lg ${
+        isError ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-emerald-100 bg-emerald-50 text-emerald-800'
+      }`}
+    >
+      <div className="flex-1 text-sm font-medium">{toast.title}</div>
+      <button type="button" className="text-xs font-semibold text-slate-500" onClick={() => dismissToast(toast.id)}>
+        Close
+      </button>
     </div>
   )
 }

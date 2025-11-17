@@ -2,6 +2,8 @@
 
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/ui/ToastProvider'
 import { TransactionInlineEditor } from './TransactionInlineEditor'
 import { TransactionRow } from './types'
 
@@ -13,6 +15,9 @@ interface TransactionTableProps {
 export function TransactionTable({ transactions, userId }: TransactionTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [rows, setRows] = useState(transactions)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const router = useRouter()
+  const { showToast } = useToast()
 
   useEffect(() => {
     setRows(transactions)
@@ -45,6 +50,23 @@ export function TransactionTable({ transactions, userId }: TransactionTableProps
     setEditingId(null)
   }
 
+  const handleDelete = async (transactionId: string) => {
+    setDeletingId(transactionId)
+    try {
+      const response = await fetch(`/api/transactions/${transactionId}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Failed to delete transaction')
+      setRows(previous => previous.filter(row => row.id !== transactionId))
+      showToast('Transaction deleted')
+      router.refresh()
+      setEditingId(current => (current === transactionId ? null : current))
+    } catch (error) {
+      console.error(error)
+      showToast('Unable to delete transaction', 'error')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-600">
@@ -61,7 +83,7 @@ export function TransactionTable({ transactions, userId }: TransactionTableProps
               <th className="px-4 py-3">Category</th>
               <th className="px-4 py-3">Payment</th>
               <th className="px-4 py-3 text-right">Amount</th>
-              <th className="px-4 py-3"></th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -89,12 +111,21 @@ export function TransactionTable({ transactions, userId }: TransactionTableProps
                 <td className="px-4 py-3 text-xs uppercase tracking-wide text-slate-500">{row.paymentMethod}</td>
                 <td className="px-4 py-3 text-right font-semibold">{row.amount.toFixed(2)}</td>
                 <td className="px-4 py-3 text-right">
-                  <button
-                    className="text-xs font-semibold text-slate-500 underline"
-                    onClick={() => setEditingId(current => (current === row.id ? null : row.id))}
-                  >
-                    {editingId === row.id ? 'Close' : 'Edit'}
-                  </button>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      className="rounded border px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                      onClick={() => setEditingId(current => (current === row.id ? null : row.id))}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="rounded border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                      onClick={() => handleDelete(row.id)}
+                      disabled={deletingId === row.id}
+                    >
+                      {deletingId === row.id ? 'Deleting…' : 'Delete'}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -102,12 +133,22 @@ export function TransactionTable({ transactions, userId }: TransactionTableProps
         </table>
       </div>
       {editingId && (
-          <TransactionInlineEditor
-            transaction={rows.find(row => row.id === editingId)!}
-          userId={userId}
-            onCancel={() => setEditingId(null)}
-            onSave={handleSave}
-          />
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/60 px-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-xl">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Edit transaction</h3>
+              <button type="button" className="text-sm text-slate-500" onClick={() => setEditingId(null)}>
+                Close
+              </button>
+            </div>
+            <TransactionInlineEditor
+              transaction={rows.find(row => row.id === editingId)!}
+              userId={userId}
+              onCancel={() => setEditingId(null)}
+              onSave={handleSave}
+            />
+          </div>
+        </div>
       )}
     </div>
   )

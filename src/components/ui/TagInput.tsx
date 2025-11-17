@@ -13,9 +13,10 @@ export function TagInput({ value, onChange, suggestions = [], placeholder }: Tag
   const [draft, setDraft] = useState('')
 
   const filteredSuggestions = useMemo(() => {
-    if (!draft) return suggestions.filter(suggestion => !value.includes(suggestion))
+    const trimmed = draft.trim()
+    if (!trimmed) return []
     return suggestions
-      .filter(option => option.toLowerCase().includes(draft.toLowerCase()))
+      .filter(option => option.toLowerCase().includes(trimmed.toLowerCase()))
       .filter(option => !value.includes(option))
   }, [draft, suggestions, value])
 
@@ -60,7 +61,10 @@ export function TagInput({ value, onChange, suggestions = [], placeholder }: Tag
             <button
               key={option}
               type="button"
-              onClick={() => addTag(option)}
+              onMouseDown={event => {
+                event.preventDefault()
+                addTag(option)
+              }}
               className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600"
             >
               + {option}
