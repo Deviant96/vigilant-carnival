@@ -87,7 +87,16 @@ Env:
 DATABASE_URL=postgresql://...
 NEXTAUTH_SECRET=your-secret
 NEXTAUTH_URL=http://localhost:3000
+# Optional: LLM insights
+OPENAI_API_KEY=your-openai-key
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_BASE_URL=https://api.openai.com/v1
 ```
+
+LLM usage:
+- The insights API accepts `?mode=llm` to request an additional LLM-generated advice block.
+- Response fields: `insights` (combined), `structuredInsights` (rule-based only), `llmAdvice` (string or null), and the `mode` returned for clarity.
+- Keep provider rate limits and token costs in mind; cache or debounce client requests as needed.
 
 Prisma:
 ```
