@@ -13,6 +13,9 @@ export async function detectAnomalies(userId: string, threshold: number = 2) {
       date: { gte: startDate },
     },
     orderBy: { date: 'asc' },
+    include: {
+      category: true,
+    },
   })
 
   if (transactions.length === 0) return []
